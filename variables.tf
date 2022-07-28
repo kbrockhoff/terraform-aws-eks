@@ -56,6 +56,12 @@ variable "subnet_ids" {
   default     = []
 }
 
+variable "pod_subnet_ids" {
+  description = "A list of subnet IDs where the pods will be provisioned. If left empty, then pods will be placed in same subnets as nodes. Typically, these subnets will have CIDRs from 100.64.0.0/10."
+  type        = list(string)
+  default     = []
+}
+
 variable "cluster_endpoint_private_access" {
   description = "Indicates whether or not the Amazon EKS private API server endpoint is enabled"
   type        = bool
@@ -462,6 +468,35 @@ variable "cluster_addons" {
   description = "Map of cluster addon configurations to enable for the cluster. Addon name can be the map keys or set with `name`"
   type        = any
   default     = {}
+}
+
+variable "enable_vpccni_addon_custom_networking" {
+  description = "Set to true to assign IP addresses from a different subnet than the node's subnet."
+  type        = bool
+  default     = false
+}
+
+variable "create_pod_security_group" {
+  description = "Determines if a security group is created for the pods when using custom VPC CNI or use the existing `pod_security_group_id`"
+  type        = bool
+  default     = true
+}
+
+variable "pod_security_group_id" {
+  description = "Existing security group ID to be attached to pods when using custom VPC CNI. Required if `create_pod_security_group` = `false`"
+  type        = string
+  default     = ""
+}
+
+variable "vpc_plugin_log_level" {
+  description = "The logging level for the VPC CNI plugin if it is being used."
+  type        = string
+  default     = "WARN"
+
+  validation {
+    condition     = contains(["DEBUG", "INFO", "WARN", "ERROR", "FATAL"], var.vpc_plugin_log_level)
+    error_message = "Allowed values: DEBUG, INFO, WARN, ERROR, FATAL."
+  }
 }
 
 ################################################################################

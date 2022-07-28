@@ -334,9 +334,46 @@ resource "aws_iam_policy" "cluster_encryption" {
 ################################################################################
 # EKS Addons
 ################################################################################
+locals {
+  vpccni_addon     = lookup(var.cluster_addons, "vpc-cni", null)
+  create_vpccni    = local.create && var.cluster_ip_family != "ipv6" && (local.vpccni_addon != null || var.enable_vpccni_addon_custom_networking) && var.enable_irsa
+  vpccni_version   = local.vpccni_addon != null ? lookup(local.vpccni_addon, "addon_version", null) : null
+  vpccni_conflicts = local.vpccni_addon != null ? lookup(local.vpccni_addon, "resolve_conflicts", "NONE") : "NONE"
+  vpccni_svcacct   = local.vpccni_addon != null ? lookup(local.vpccni_addon, "service_account_role_arn", "") : ""
+  cluster_addons   = local.create_vpccni ? { for k, v in var.cluster_addons : k => v if !contains(["vpc-cni"], k) } : var.cluster_addons
+}
+
+module "vpc_cni" {
+  source = "./modules/vpc-cni"
+
+  create                    = local.create_vpccni
+  cluster_name              = var.cluster_name
+  cluster_version           = var.cluster_version
+  cluster_endpoint          = aws_eks_cluster.this[0].endpoint
+  cluster_auth_base64       = aws_eks_cluster.this[0].certificate_authority[0].data
+  vpc_id                    = var.vpc_id
+  vpccni_version            = local.vpccni_version
+  upgrade_resolve_conflicts = local.vpccni_conflicts
+  service_account_role_arn  = local.vpccni_svcacct
+  pod_subnets               = var.pod_subnet_ids
+  enable_custom_network     = var.enable_vpccni_addon_custom_networking && length(var.pod_subnet_ids) > 0
+  pod_create_security_group = var.create_pod_security_group
+  pod_security_group_id     = var.pod_security_group_id
+  pods_egress_cidrs         = []
+  cluster_security_group_id = local.cluster_security_group_id
+  cluster_oidc_issuer_url   = aws_iam_openid_connect_provider.oidc_provider[0].url
+  oidc_provider_arn         = aws_iam_openid_connect_provider.oidc_provider[0].arn
+  vpc_plugin_log_level      = var.vpc_plugin_log_level
+
+  depends_on = [
+    aws_eks_cluster.this,
+  ]
+
+  tags = var.tags
+}
 
 resource "aws_eks_addon" "this" {
-  for_each = { for k, v in var.cluster_addons : k => v if local.create }
+  for_each = { for k, v in local.cluster_addons : k => v if local.create }
 
   cluster_name = aws_eks_cluster.this[0].name
   addon_name   = try(each.value.name, each.key)
@@ -346,9 +383,7 @@ resource "aws_eks_addon" "this" {
   service_account_role_arn = lookup(each.value, "service_account_role_arn", null)
 
   depends_on = [
-    module.fargate_profile,
-    module.eks_managed_node_group,
-    module.self_managed_node_group,
+    aws_eks_cluster.this,
   ]
 
   tags = var.tags

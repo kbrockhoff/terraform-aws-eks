@@ -221,6 +221,8 @@ module "fargate_profile" {
   iam_role_additional_policies  = try(each.value.iam_role_additional_policies, var.fargate_profile_defaults.iam_role_additional_policies, [])
 
   tags = merge(var.tags, try(each.value.tags, var.fargate_profile_defaults.tags, {}))
+
+  depends_on = [module.vpc_cni, aws_eks_addon.this]
 }
 
 ################################################################################
@@ -329,6 +331,8 @@ module "eks_managed_node_group" {
   security_group_tags               = try(each.value.security_group_tags, var.eks_managed_node_group_defaults.security_group_tags, {})
 
   tags = merge(var.tags, try(each.value.tags, var.eks_managed_node_group_defaults.tags, {}))
+
+  depends_on = [module.vpc_cni, aws_eks_addon.this]
 }
 
 ################################################################################
@@ -461,4 +465,6 @@ module "self_managed_node_group" {
   security_group_tags               = try(each.value.security_group_tags, var.self_managed_node_group_defaults.security_group_tags, {})
 
   tags = merge(var.tags, try(each.value.tags, var.self_managed_node_group_defaults.tags, {}))
+
+  depends_on = [module.vpc_cni, aws_eks_addon.this]
 }
