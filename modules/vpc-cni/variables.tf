@@ -42,7 +42,7 @@ variable "vpc_id" {
 variable "vpccni_version" {
   description = "vpc-cni addon version to use."
   type        = string
-  default     = null
+  default     = ""
 }
 
 variable "upgrade_resolve_conflicts" {

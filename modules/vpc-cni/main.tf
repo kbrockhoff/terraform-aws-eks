@@ -3,7 +3,6 @@ resource "aws_eks_addon" "vpccni" {
 
   cluster_name             = var.cluster_name
   addon_name               = "vpc-cni"
-  addon_version            = local.vpccni_version
   service_account_role_arn = local.service_account_role_arn
   resolve_conflicts        = var.upgrade_resolve_conflicts
 }

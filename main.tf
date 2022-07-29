@@ -337,7 +337,7 @@ resource "aws_iam_policy" "cluster_encryption" {
 locals {
   vpccni_addon     = lookup(var.cluster_addons, "vpc-cni", null)
   create_vpccni    = local.create && var.cluster_ip_family != "ipv6" && (local.vpccni_addon != null || var.enable_vpccni_addon_custom_networking) && var.enable_irsa
-  vpccni_version   = local.vpccni_addon != null ? lookup(local.vpccni_addon, "addon_version", null) : null
+  vpccni_version   = local.vpccni_addon != null ? lookup(local.vpccni_addon, "addon_version", "") : ""
   vpccni_conflicts = local.vpccni_addon != null ? lookup(local.vpccni_addon, "resolve_conflicts", "NONE") : "NONE"
   vpccni_svcacct   = local.vpccni_addon != null ? lookup(local.vpccni_addon, "service_account_role_arn", "") : ""
   cluster_addons   = local.create_vpccni ? { for k, v in var.cluster_addons : k => v if !contains(["vpc-cni"], k) } : var.cluster_addons
@@ -348,7 +348,7 @@ module "vpc_cni" {
 
   create                    = local.create_vpccni
   cluster_name              = var.cluster_name
-  cluster_version           = var.cluster_version
+  cluster_version           = aws_eks_cluster.this[0].version
   cluster_endpoint          = aws_eks_cluster.this[0].endpoint
   cluster_auth_base64       = aws_eks_cluster.this[0].certificate_authority[0].data
   vpc_id                    = var.vpc_id

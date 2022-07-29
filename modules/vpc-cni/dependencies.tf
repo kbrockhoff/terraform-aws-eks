@@ -1,5 +1,11 @@
 data "aws_region" "current" {}
 
+data "aws_vpc" "selected" {
+  count = var.create ? 1 : 0
+
+  id = var.vpc_id
+}
+
 data "aws_subnet" "pod" {
   for_each = toset(var.create ? var.pod_subnets : [])
 

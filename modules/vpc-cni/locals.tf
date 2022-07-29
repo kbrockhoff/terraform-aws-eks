@@ -6,9 +6,7 @@ locals {
     "1.21" = "1.11.2-eksbuild.1"
     "1.22" = "1.11.2-eksbuild.1"
   }
-  vpccni_version = var.vpccni_version == null || length(var.vpccni_version) == 0 ? (
-    lookup(local.addon_versions_map[var.cluster_version], "1.11.2-eksbuild.1")
-  ) : var.vpccni_version
+  vpccni_version = lookup(local.addon_versions_map, var.cluster_version, "1.11.2-eksbuild.1")
 
   create_iam_role = var.create && length(var.service_account_role_arn) == 0
   vpccnirole_name = "${var.cluster_name}-aws-node-irsa"
@@ -22,8 +20,10 @@ locals {
     ) : (
     var.pod_security_group_id
   )
-  vpc_cidrs = concat(
-    [for cba in data.aws_vpc.selected.cidr_block_associations : cba.cidr_block],
-    [for knc in data.aws_eks_cluster.cluster.kubernetes_network_config : knc.service_ipv4_cidr],
-  )
+  vpc_cidrs = var.create ? (
+    concat(
+      [for cba in data.aws_vpc.selected[0].cidr_block_associations : cba.cidr_block],
+      [for knc in data.aws_eks_cluster.cluster[0].kubernetes_network_config : knc.service_ipv4_cidr],
+    )
+  ) : []
 }

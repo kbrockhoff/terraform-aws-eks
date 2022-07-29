@@ -5,20 +5,20 @@ output "pod_security_group_id" {
 
 output "vpc_cni_iam_role_name" {
   description = "IAM role name used by the Amazon CNI plugin addon."
-  value       = join("", aws_iam_role.vpc_cni.*.name)
+  value       = local.vpccnirole_name
 }
 
 output "vpc_cni_iam_role_arn" {
   description = "IAM role ARN used by the Amazon CNI plugin addon."
-  value       = join("", aws_iam_role.vpc_cni.*.arn)
+  value       = local.service_account_role_arn
 }
 
 output "vpc_cni_addon_id" {
   description = "Amazon CNI plugin addon ID."
-  value       = join("", aws_eks_addon.vpccni.*.id)
+  value       = var.create ? aws_eks_addon.vpccni[0].id : ""
 }
 
 output "vpc_cni_addon_arn" {
   description = "Amazon CNI plugin addon ARN."
-  value       = join("", aws_eks_addon.vpccni.*.arn)
+  value       = var.create ? aws_eks_addon.vpccni[0].id : ""
 }
